@@ -1,0 +1,10 @@
+PrediXcan.py
+PrediXcanAssociation.R
+extract.hapmap.R
+ilist
+manhattan.R
+pipeline.sh
+sample.sh
+split.hapmap.R
+
+output:
