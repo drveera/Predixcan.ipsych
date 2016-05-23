@@ -307,6 +307,11 @@ then
 	#once the extraction is finished, concatenate dosage chunks chromsosome wise
 	mkdir $outdir/dosages
 
+	#copy one of the fam files from chunkdir to dosages folder 
+	ls $chunkdir/*fam > $outdir/fam.list
+	cp `head -1 $outdir/fam.list` $outdir/dosages/samples.txt
+	rm $outdir/fam.list
+	
 	for i in `seq 22`
 	do
 		echo "cat $outdir/*chr${i}_*subset > $outdir/dosages/chr$i.dosage"
