@@ -103,7 +103,7 @@ predixcan --assoc --outdir <value> --pheno <value>
 Note: the script by default looks for a folder 'expression' inside the output folder(outdir) that you specify. The expression folder should contain the predicted expressions (one to many), which are the output of the prediction step. You can override this with `--expression` argument pointing to a folder with predicted expressions located elsewhere.
 
 ### Details
-The script will run an association analysis using the PrediXcanAssociation.R Rscript. The Rscript is modified from the actual version. By default the Rscript will run a logistic regression analysis with the phenotype. In case, if you are using a continuous parameter as a phenotype, just add `--linear` tag in the command.
+The script will run an association analysis using the PrediXcanAssociation.R Rscript. The Rscript is modified from the actual version. By default the Rscript will run a logistic regression analysis with the phenotype. The phenotype should be coded as 0 and 1 (*not 1 and 2*). In case, if you are using a continuous parameter as a phenotype, just add `--linear` tag in the command.
 
 # Manhattan plot
 
