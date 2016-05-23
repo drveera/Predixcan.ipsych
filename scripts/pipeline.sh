@@ -1,7 +1,7 @@
 #!/bin/sh
 
 OPTS=`getopt -o h -l predict,extract,assoc,manhattan,help,outdir:,chunkdir:,pheno:,weights:,\
-results:,cov:,expression:,infoscore:,linear:,dosagefolder:,alldbs,dbsdir:  -n "predixcan" -- "$@"`
+results:,cov:,expression:,infoscore:,linear:,dosagefolder:,alldbs,dbsdir:,noinfo  -n "predixcan" -- "$@"`
 
 eval set -- "$OPTS"
 helpmessage() {
@@ -33,6 +33,7 @@ logical arguments that takes **no values**:
 --assoc 
 --manhattan 
 --linear
+--noinfo
 
 
 arguments that require values:
@@ -66,6 +67,7 @@ while true; do
 	--linear) linear=true; shift ;;
 	--alldbs) alldbs=true; shift ;;
 	--dbsdir) dbsdir=$2; shift 2;;
+	--noinfo) noinfo=true; shift ;;
 	-h | --help) helpmessage; exit 1 ; shift;;
 	--) echo "type -h for help"; shift; break;;
 	*) break ;;
@@ -272,30 +274,54 @@ then
 	check_chunkdir
 	
 	maindir=`dirname $chunkdir`
+	
+	if [ `echo $noinfo` ];
+	then
+	        #make a list of chunks chromosome wise
+                for cr in `seq 22`
+                do
+                        ls $chunkdir/*chr${cr}_*gz > $outdir/chr$cr.chunks.list
+			ls $chunkdir/*chr${cr}_*map > $outdir/chr$cr.map.list
+                done
 
-	#make a list of chunks chromosome wise
-	for cr in `seq 22`
-	do
-		ls $chunkdir/*chr${cr}_*gz > $outdir/chr$cr.chunks.list
-		ls $maindir/info/*chr${cr}_*info > $outdir/chr$cr.info.list
-	done
 
+                #write job script to extract hapmap snps from all chunks
+                for cr in `seq 22`
+                do
+                        while read chunk <&3 && read map <&4
+                        do
+                        subsetname=`basename $chunk`
+                        echo "Rscript $softdir/scripts/extract.hapmap.noinfo.R \
+                                $softdir/resources/hapmap/chr$cr.chr.txt \
+                                $chunk \
+                                $map \
+                                $outdir/$subsetname.subset"
+                        done 3<$outdir/chr$cr.chunks.list 4<$outdir/chr$cr.map.list
+                done > $outdir/job1.adispatch	
+	else
 
-
-
-	#write job script to extract hapmap snps from all chunks
-	for cr in `seq 22`
-	do
-		while read chunk <&3 && read info <&4 
+		#make a list of chunks chromosome wise
+		for cr in `seq 22`
 		do
-		subsetname=`basename $chunk`
-		echo "Rscript $softdir/scripts/extract.hapmap.R \
-			$softdir/resources/hapmap/chr$cr.chr.txt \
-			$chunk \
-			$info \
-			$outdir/$subsetname.subset" 
-		done 3<$outdir/chr$cr.chunks.list 4<$outdir/chr$cr.info.list
-	done > $outdir/job1.adispatch
+			ls $chunkdir/*chr${cr}_*gz > $outdir/chr$cr.chunks.list
+			ls $maindir/info/*chr${cr}_*info > $outdir/chr$cr.info.list
+		done
+
+
+		#write job script to extract hapmap snps from all chunks
+		for cr in `seq 22`
+		do
+			while read chunk <&3 && read info <&4 
+			do
+			subsetname=`basename $chunk`
+			echo "Rscript $softdir/scripts/extract.hapmap.R \
+				$softdir/resources/hapmap/chr$cr.chr.txt \
+				$chunk \
+				$info \
+				$outdir/$subsetname.subset" 
+			done 3<$outdir/chr$cr.chunks.list 4<$outdir/chr$cr.info.list
+		done > $outdir/job1.adispatch
+	fi
 
 	#submit the job
 	head -1 $outdir/job1.adispatch > $outdir/testjob1.adispatch
