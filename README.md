@@ -33,7 +33,7 @@ Note: the script will install the packages if not installed already
 Clone the repository and run the install.sh script once. 
 
 ```
-git clone https://veera_dr@bitbucket.org/veera_dr/predixcan.ipsych.git
+git clone https://github.com/veera-dr/Predixcan.ipsych.git 
 cd predixcan.ipsych
 sh install.sh
 ```
