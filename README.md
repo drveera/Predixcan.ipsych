@@ -64,10 +64,11 @@ predixcan --extract --chunkdir <value> --outdir <value>
 | `--outdir`  | full path to the folder where you need the outputs         |
 | `--chunkdir`| full path to the 'qc1' folder containing the dosage chunks |
 
-*Note: the script by default will look for the 'info' folder in the same directory where 'qc1' folder is located.*
+*Note: the script by default will look for the 'info' folder in the same directory where 'qc1' folder is located. This is for quality filtering based on infoscore thresholds. You can skip this filtering step with `--noinfo` argument*
 
 #### Details
 This will extract a subset of hapmap variants (predixcan requires only subset of variants for prediction) from the dosage files and will convert them to allele dosage format required by predixcan software. In addition, the script also filters out the variants with info score < 0.60 (you can change this with --infoscore argument) before conversion. The converted dosage files will be placed in a folder named "dosages" inside the outdir you specify.
+
 
 # Prediction
 
