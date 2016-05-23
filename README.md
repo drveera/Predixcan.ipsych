@@ -4,9 +4,11 @@ To know about PrediXcan, please refer the [link](https://github.com/hakyim/Predi
 
 ## Key things to know before using this script
 
-1. The  script will only work on the imputation dosage files produced by ricopilli pipeline (link) and it assumes a file structure of ricopilli pipeline. 
+The script is only compatible with
 
-2. In a linux environment with SLURM job sheduler
+1. the imputation dosage files produced by ricopilli pipeline (link) and it assumes a file structure derived from ricopilli pipeline. 
+
+2. a linux environment with SLURM job sheduler
 
 
 ## This script does four things
