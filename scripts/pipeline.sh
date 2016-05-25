@@ -1,7 +1,7 @@
 #!/bin/sh
 
 OPTS=`getopt -o h -l predict,extract,assoc,manhattan,help,outdir:,chunkdir:,pheno:,weights:,\
-results:,cov:,expression:,infoscore:,linear:,dosagefolder:,alldbs,dbsdir:,noinfo  -n "predixcan" -- "$@"`
+results:,cov:,expression:,infoscore:,linear:,dosagefolder:,alldbs,dbsdir:,noinfo,gxe:  -n "predixcan" -- "$@"`
 
 eval set -- "$OPTS"
 helpmessage() {
@@ -45,6 +45,7 @@ arguments that require values:
 --cov <covariate file> [this is optional, so can be skipped if not required]
 --expression <full path of the folder containing the predicted expressions>
 --results <full path of the folder containing the association results> 
+--gxe <full path of the folder containing the environment variable>
 "
 
 }
@@ -68,6 +69,7 @@ while true; do
 	--alldbs) alldbs=true; shift ;;
 	--dbsdir) dbsdir=$2; shift 2;;
 	--noinfo) noinfo=true; shift ;;
+	--gxe) gxe=$2; shift 2;;
 	-h | --help) helpmessage; exit 1 ; shift;;
 	--) echo "type -h for help"; shift; break;;
 	*) break ;;
@@ -412,71 +414,143 @@ fi
 
 #ASSOCIATION **************
 
-
-if [ `echo "$assoc"` ];
+if [ -z $gxe ];
 then
-	#check arguments
-	check_outdir
-	check_pheno
-	check_expressionfolder
-	
+	if [ `echo "$assoc"` ];
+	then
+		#check arguments
+		check_outdir
+		check_pheno
+		check_expressionfolder
+		
 
-	mkdir $outdir/results
-	#submit the jobscript to run association
-	if [ `echo "$linear"` ];
-	then
-		testtype=linear
-	else
-		testtype=logistic
+		mkdir $outdir/results
+		#submit the jobscript to run association
+		if [ `echo "$linear"` ];
+		then
+			testtype=linear
+		else
+			testtype=logistic
+		fi
+		
+		if [ -z $cov_file ];
+		then
+			assoc_call(){
+				echo "python $softdir/scripts/PrediXcan.py --assoc \
+				--pheno $pheno \
+				--pred_exp $1 \
+				--output_dir $outdir/results \
+				--outname `basename $1` \
+				--$testtype \
+				--nthread 8
+				"
+			}
+		else
+			assoc_call(){
+				echo "python $softdir/scripts/PrediXcan.py --assoc \
+				--pheno $pheno \
+				--pred_exp $1 \
+				--output_dir $outdir/results \
+				--outname `basename $1` \
+				--cov $cov_file \
+				--$testtype \
+				--nthread 8 
+				"
+			}
+		fi
+		if [ ! -z $expression ];
+		then
+			check_uexpressionfolder
+			ls $expression/* > $outdir/expression.list
+		else
+			ls $outdir/expression/* > $outdir/expression.list
+		fi
+		check_expressionlist
+		
+		while read i
+		do
+			assoc_call $i
+		done < $outdir/expression.list > $outdir/job6.adispatch
+		
+		if [ ! -z ${job5ID+x} ];
+		then
+			adispatch -p normal -c 8 --mem=256g --dependency=afterok:$job5ID $outdir/job6.adispatch > $outdir/job6ID
+			job6ID=`makejobid 6`
+		else 
+			adispatch -p normal -c 8 --mem=256g $outdir/job6.adispatch > $outdir/job6ID
+			job6ID=`makejobid 6`
+		fi
+
 	fi
-	
-	if [ -z $cov_file ];
+
+else
+	if [ `echo "$assoc"` ];
 	then
-		assoc_call(){
-			echo "python $softdir/scripts/PrediXcan.py --assoc \
-			--pheno $pheno \
-			--pred_exp $1 \
-			--output_dir $outdir/results \
-			--outname `basename $1` \
-			--$testtype \
-			--nthread 8
-			"
-		}
-	else
-	        assoc_call(){
-                        echo "python $softdir/scripts/PrediXcan.py --assoc \
-                        --pheno $pheno \
-                        --pred_exp $1 \
-                        --output_dir $outdir/results \
-                        --outname `basename $1` \
-			--cov $cov_file \
-			--$testtype \
-			--nthread 8 
-                        "
-                }
+		#check arguments
+		check_outdir
+		check_pheno
+		check_expressionfolder
+		
+
+		mkdir $outdir/results
+		#submit the jobscript to run association
+		if [ `echo "$linear"` ];
+		then
+			testtype=linear
+		else
+			testtype=logistic
+		fi
+		
+		if [ -z $cov_file ];
+		then
+			assoc_call(){
+				echo "python $softdir/scripts/PrediXcan.gxe.py --assoc \
+				--pheno $pheno \
+				--pred_exp $1 \
+				--output_dir $outdir/results \
+				--outname `basename $1` \
+				--$testtype \
+				--nthread 8
+				"
+			}
+		else
+			assoc_call(){
+				echo "python $softdir/scripts/PrediXcan.gxe.py --assoc \
+				--pheno $pheno \
+				--pred_exp $1 \
+				--output_dir $outdir/results \
+				--outname `basename $1` \
+				--cov $cov_file \
+				--$testtype \
+				--nthread 8 
+				"
+			}
+		fi
+		if [ ! -z $expression ];
+		then
+			check_uexpressionfolder
+			ls $expression/* > $outdir/expression.list
+		else
+			ls $outdir/expression/* > $outdir/expression.list
+		fi
+		check_expressionlist
+		
+		while read i
+		do
+			assoc_call $i
+		done < $outdir/expression.list > $outdir/job6.adispatch
+		
+		if [ ! -z ${job5ID+x} ];
+		then
+			adispatch -p normal -c 8 --mem=256g --dependency=afterok:$job5ID $outdir/job6.adispatch > $outdir/job6ID
+			job6ID=`makejobid 6`
+		else 
+			adispatch -p normal -c 8 --mem=256g $outdir/job6.adispatch > $outdir/job6ID
+			job6ID=`makejobid 6`
+		fi
+
 	fi
-	if [ ! -z $expression ];
-	then
-		check_uexpressionfolder
-		ls $expression/* > $outdir/expression.list
-	else
-		ls $outdir/expression/* > $outdir/expression.list
-	fi
-	check_expressionlist
-	
-	while read i
-	do
-		assoc_call $i
-	done < $outdir/expression.list > $outdir/job6.adispatch
-	
-	if [ ! -z ${job5ID+x} ];
-	then
-		adispatch -p normal -c 8 --mem=256g --dependency=afterok:$job5ID $outdir/job6.adispatch > $outdir/job6ID
-		job6ID=`makejobid 6`
-	else 
-		adispatch -p normal -c 8 --mem=256g $outdir/job6.adispatch > $outdir/job6ID
-		job6ID=`makejobid 6`
-	fi
+
 
 fi
 
